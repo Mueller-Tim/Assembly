@@ -1,0 +1,302 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ; ------------------------------------------------------
+                       ------------
+    2 00000000         ; --  _____       ______  _____                         
+                                  -
+    3 00000000         ; -- |_   _|     |  ____|/ ____|                        
+                                  -
+    4 00000000         ; --   | |  _ __ | |__  | (___    Institute of Embedded 
+                       Systems    -
+    5 00000000         ; --   | | | '_ \|  __|  \___ \   Zurich University of  
+                                  -
+    6 00000000         ; --  _| |_| | | | |____ ____) |  Applied Sciences      
+                                  -
+    7 00000000         ; -- |_____|_| |_|______|_____/   8401 Winterthur, Switz
+                       erland     -
+    8 00000000         ; ------------------------------------------------------
+                       ------------
+    9 00000000         ; --
+   10 00000000         ; -- main.s
+   11 00000000         ; --
+   12 00000000         ; -- CT1 P03 Transferbefehle
+   13 00000000         ; --
+   14 00000000         ; -- $Id: transbf.s 552 2014-09-01 15:06:12Z muln $
+   15 00000000         ; ------------------------------------------------------
+                       ------------
+   16 00000000         ;Directives
+   17 00000000                 PRESERVE8
+   18 00000000                 THUMB
+   19 00000000         
+   20 00000000         ; ------------------------------------------------------
+                       ------------
+   21 00000000         ; -- Symbolic Literals
+   22 00000000         ; ------------------------------------------------------
+                       ------------
+   23 00000000 00000012 
+                       MY_CONST
+                               EQU              0x12
+   24 00000000 60000200 
+                       ADDR_DIP_SWITCH_31_0
+                               EQU              0x60000200
+   25 00000000 60000100 
+                       ADDR_LED_31_0
+                               EQU              0x60000100
+   26 00000000         
+   27 00000000         ; ------------------------------------------------------
+                       ------------
+   28 00000000         ; -- Variables
+   29 00000000         ; ------------------------------------------------------
+                       ------------
+   30 00000000                 AREA             MyAsmVar, DATA, READWRITE
+   31 00000000         
+   32 00000000 00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00       store_table
+                               SPACE            16          ; reserve 16 byte (
+                                                            4 words) 
+   33 00000010                 ALIGN
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   34 00000010         
+   35 00000010         ; ------------------------------------------------------
+                       ------------
+   36 00000010         ; -- Constants
+   37 00000010         ; ------------------------------------------------------
+                       ------------
+   38 00000010                 AREA             MyAsmConst, DATA, READONLY
+   39 00000000         
+   40 00000000 60000200 
+                       addr_dip_switch
+                               DCD              0x60000200
+   41 00000004 01234567 
+              12345678 
+              99996666 
+              34567890 const_table
+                               DCD              0x01234567, 0x12345678, 0x99996
+666, 0x34567890
+   42 00000014                 ALIGN
+   43 00000014         
+   44 00000014         ; ------------------------------------------------------
+                       ------------
+   45 00000014         ; -- MyCode
+   46 00000014         ; ------------------------------------------------------
+                       ------------
+   47 00000014                 AREA             MyCode, CODE, READONLY
+   48 00000000         
+   49 00000000         main    PROC
+   50 00000000                 EXPORT           main
+   51 00000000         
+   52 00000000         ; MOV/MOVS instruction, loading constants
+   53 00000000 21FE            MOVS             R1, #0xfe   ; ***A1***
+   54 00000002 468A            MOV              R10, R1
+   55 00000004 2212            MOVS             R2, #MY_CONST
+   56 00000006 4693            MOV              R11, R2     ; ***A2***
+   57 00000008         
+   58 00000008         ; load value of dip switches to R4  
+   59 00000008 4B0F            LDR              R3, =ADDR_DIP_SWITCH_31_0 
+                                                            ; ***A3***
+   60 0000000A 681C            LDR              R4, [R3]
+   61 0000000C         
+   62 0000000C         ; LDR literal, load value of addr_dip_switch to R7 
+   63 0000000C 4FFF            LDR              R7, addr_dip_switch ; ***A4***
+   64 0000000E 6838            LDR              R0, [R7]
+   65 00000010         
+   66 00000010         ; write value of dip switches to LEDs
+   67 00000010 4E0E            LDR              R6, =ADDR_LED_31_0
+   68 00000012 6030            STR              R0, [R6]
+   69 00000014         
+   70 00000014         ; LDR pseudo instruction, load address of addr_dip_switc
+                       h to R7
+   71 00000014 4F0E            LDR              R7, =addr_dip_switch 
+                                                            ; ***A5*** 
+   72 00000016 6838            LDR              R0, [R7]
+   73 00000018         
+   74 00000018         ; write address of dip switches to LEDs
+   75 00000018 4E0C            LDR              R6, =ADDR_LED_31_0
+   76 0000001A 6030            STR              R0, [R6]
+   77 0000001C         
+   78 0000001C         ; read values from const_table
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   79 0000001C 4F0D            LDR              R7, =const_table
+   80 0000001E 6838            LDR              R0, [R7]
+   81 00000020 6879            LDR              R1, [R7, #4] ; ***A6***
+   82 00000022 2608            MOVS             R6, #8
+   83 00000024 59BA            LDR              R2, [R7, R6]
+   84 00000026 260C            MOVS             R6, #12
+   85 00000028 59BB            LDR              R3, [R7, R6] ; ***A7***
+   86 0000002A         
+   87 0000002A         ; write values to store_table
+   88 0000002A 4F0B            LDR              R7, =store_table
+   89 0000002C 6038            STR              R0, [R7]
+   90 0000002E 6079            STR              R1, [R7,#4]
+   91 00000030 2608            MOVS             R6, #8
+   92 00000032 51BA            STR              R2, [R7,R6]
+   93 00000034 260C            MOVS             R6, #12
+   94 00000036 51BB            STR              R3, [R7,R6]
+   95 00000038         
+   96 00000038         ; write third value from store_table to leds
+   97 00000038 2108            MOVS             R1, #8
+   98 0000003A 4F07            LDR              R7, =store_table
+   99 0000003C 5878            LDR              R0, [R7, R1]
+  100 0000003E 4E03            LDR              R6, =ADDR_LED_31_0
+  101 00000040 6030            STR              R0, [R6]
+  102 00000042         
+  103 00000042         ; load multiple registers from memory
+  104 00000042 4804            LDR              R0, =const_table
+  105 00000044 C8F0            LDM              R0!, {R4, R5, R6, R7}
+  106 00000046         
+  107 00000046 E7FE            B                main
+  108 00000048         
+  109 00000048                 ALIGN
+  110 00000048         
+  111 00000048         ; ------------------------------------------------------
+                       ------------
+  112 00000048         ; End of code
+  113 00000048         ; ------------------------------------------------------
+                       ------------
+  114 00000048                 ENDP
+  115 00000048                 END
+              60000200 
+              60000100 
+              00000000 
+              00000000 
+              00000000 
+Command Line: --debug --xref --diag_suppress=9931,A1950W --cpu=Cortex-M0 --depe
+nd=.\build\transbf.d -o.\build\transbf.o -I.\RTE\_Target_1 -IC:\Users\TimMu\App
+Data\Local\Arm\Packs\InES\CTBoard14_DFP\4.0.4\Device\Include -IC:\Users\TimMu\A
+ppData\Local\Arm\Packs\InES\CTBoard14_DFP\4.0.4\Device\Include\m0 -IC:\Users\Ti
+mMu\AppData\Local\Arm\Packs\InES\CTBoard14_DFP\4.0.4\HAL\Include --predefine="_
+_EVAL SETA 1" --predefine="__UVISION_VERSION SETA 538" --predefine="_RTE_ SETA 
+1" --predefine="_RTE_ SETA 1" --list=.\build\transbf.lst app\transbf.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+MyAsmVar 00000000
+
+Symbol: MyAsmVar
+   Definitions
+      At line 30 in file app\transbf.s
+   Uses
+      None
+Comment: MyAsmVar unused
+store_table 00000000
+
+Symbol: store_table
+   Definitions
+      At line 32 in file app\transbf.s
+   Uses
+      At line 88 in file app\transbf.s
+      At line 98 in file app\transbf.s
+
+2 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+MyAsmConst 00000000
+
+Symbol: MyAsmConst
+   Definitions
+      At line 38 in file app\transbf.s
+   Uses
+      None
+Comment: MyAsmConst unused
+addr_dip_switch 00000000
+
+Symbol: addr_dip_switch
+   Definitions
+      At line 40 in file app\transbf.s
+   Uses
+      At line 63 in file app\transbf.s
+      At line 71 in file app\transbf.s
+
+const_table 00000004
+
+Symbol: const_table
+   Definitions
+      At line 41 in file app\transbf.s
+   Uses
+      At line 79 in file app\transbf.s
+      At line 104 in file app\transbf.s
+
+3 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+MyCode 00000000
+
+Symbol: MyCode
+   Definitions
+      At line 47 in file app\transbf.s
+   Uses
+      None
+Comment: MyCode unused
+main 00000000
+
+Symbol: main
+   Definitions
+      At line 49 in file app\transbf.s
+   Uses
+      At line 50 in file app\transbf.s
+      At line 107 in file app\transbf.s
+
+2 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+ADDR_DIP_SWITCH_31_0 60000200
+
+Symbol: ADDR_DIP_SWITCH_31_0
+   Definitions
+      At line 24 in file app\transbf.s
+   Uses
+      At line 59 in file app\transbf.s
+Comment: ADDR_DIP_SWITCH_31_0 used once
+ADDR_LED_31_0 60000100
+
+Symbol: ADDR_LED_31_0
+   Definitions
+      At line 25 in file app\transbf.s
+   Uses
+      At line 67 in file app\transbf.s
+      At line 75 in file app\transbf.s
+      At line 100 in file app\transbf.s
+
+MY_CONST 00000012
+
+Symbol: MY_CONST
+   Definitions
+      At line 23 in file app\transbf.s
+   Uses
+      At line 55 in file app\transbf.s
+Comment: MY_CONST used once
+3 symbols
+345 symbols in table
